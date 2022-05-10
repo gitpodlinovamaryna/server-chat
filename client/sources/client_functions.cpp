@@ -29,7 +29,6 @@ void startClient(int argc, char **argv)
         o_client.setPort(tempPort);             
         o_client.createSocket();
         o_client.connectToServer();
-        std::string message;
         while (o_client.send_msg() != "exit")
         {
             o_client.receive();

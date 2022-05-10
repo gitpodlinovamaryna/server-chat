@@ -2,9 +2,10 @@
 #define SERVER_FUNCTIONS_H
 
 #include "server.h"
+extern std::vector<int> socketsVector;
 
 std::string getHostStr(const TcpServer::Client& client);
-int startServer();
+void startServer();
 
 
 #endif

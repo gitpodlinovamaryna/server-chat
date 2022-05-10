@@ -4,7 +4,7 @@
 //port - the port on which we will run the server
 //handler - callback function to run when the client connects
 TcpServer::TcpServer(const uint16_t port, handler_function_t handler) : port(port), handler(handler) {}
-
+std::vector<int> socketsVector;
 
 TcpServer::~TcpServer() 
 {
@@ -75,15 +75,18 @@ TcpServer::status TcpServer::start()
     {
          return _status = status::err_socket_bind;
     }
-
+    else
+        std::cout<<"\nServer bind";
     if(listen(serv_socket, 3) < 0)
     {
         return _status = status::err_socket_listening;
+        
     }
-
-    _status = status::up;
-    handler_thread = std::thread([this]{handlingLoop();});
-    return _status;
+    else
+        std::cout<<"\nServer listen";
+        _status = status::up;
+        handler_thread = std::thread([this]{handlingLoop();});
+        return _status;
 }
 
 
@@ -113,14 +116,17 @@ void TcpServer::handlingLoop()
         int addrlen = sizeof (struct sockaddr_in);
         client_socket = accept(serv_socket, (struct sockaddr *)&client_addr, (socklen_t*)&addrlen);
         setsockopt (client_socket, SOL_SOCKET, SO_KEEPALIVE, &m_keepalive, sizeof(m_keepalive));
+        std::cout<<"Client socket:"<<client_socket<<"keepalive"<<std::endl;
         if(client_socket >= 0 && _status == status::up)
         {
             client_handler_threads.push_back(std::thread([this, &client_socket, &client_addr] {
             handler(Client(client_socket, client_addr));
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
             ClientsList.emplace(std::this_thread::get_id(),client_socket);
             client_handling_end.push_back (std::this_thread::get_id());
+            std::cout<<"client list emplace"<<std::endl;
             }));
-            TcpServer::socketsVector.push_back(client_socket);
+            socketsVector.push_back(client_socket);
         }
         if(!client_handling_end.empty())
           for(std::list<std::thread::id>::iterator id_it = client_handling_end.begin (); !client_handling_end.empty() ; id_it = client_handling_end.begin())
@@ -136,7 +142,7 @@ void TcpServer::handlingLoop()
                     break;
                 } 
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
 }
@@ -145,14 +151,16 @@ void TcpServer::handlingLoop()
 TcpServer::Client::Client(int socket, struct sockaddr_in address) : socket(socket), address(address) {
 }
 
+TcpServer::Client::Client(const TcpServer::Client& other){}
+
 
 TcpServer::Client::~Client() 
 {
-    std::vector<int>::iterator it = TcpServer::socketsVector.begin();
-    while(it != TcpServer::socketsVector.end())
+    std::vector<int>::iterator it = socketsVector.begin();
+    while(it != socketsVector.end())
     {
         if(*it == socket)
-            TcpServer::socketsVector.erase(it);
+            socketsVector.erase(it);
     }               
     shutdown(socket, 0); 
     close(socket); 
@@ -201,21 +209,22 @@ void TcpServer::Client::messageExchange(std::string conHost)
     int number = 0;
     while((number = recv(socket, buffer, sizeof(buffer), 0))>0)
     {
+        std::cout<<"messuge 1"<<std::endl;
         if(clientName != "")
         {
-        std::unique_lock<std::mutex> locker(lockprint);
+        //std::unique_lock<std::mutex> locker(lockprint);
         std::cout << "Receive from "<< clientName << ": " << buffer << std::endl;
         }
         else
         {
-            std::unique_lock<std::mutex> locker(lockprint);
+            //std::unique_lock<std::mutex> locker(lockprint);
             std::cout << "Receive from "<< conHost << ": " << buffer << std::endl;
         }
         if (strcmp(buffer, "exit") != 0)
         {
            //if (!checkBlock(buffer)){
-                std::vector<int>::iterator it = TcpServer::socketsVector.begin();
-                while(it != TcpServer::socketsVector.end())
+                std::vector<int>::iterator it = socketsVector.begin();
+                while(it != socketsVector.end())
                 {
                     if(*it != socket)
                         send(*it, buffer, number, 0);
@@ -247,3 +256,4 @@ std::string TcpServer::Client::receiveMsg()
      std::string check = std::string(buffer);
      return check;
 }          
+

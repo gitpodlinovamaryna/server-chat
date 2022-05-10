@@ -4,6 +4,7 @@
 
 int main(int argc, char **argv)
 {
-    return startServer();
+     startServer();
+     return 0;
 
 }

@@ -23,12 +23,13 @@
 
 //Buffer for receiving data from the client
 static constexpr uint16_t buffer_size = 4096;
+extern std::vector<int> socketsVector;
 
 class TcpServer 
 {
 public:
     class Client;
-    static std::vector<int> socketsVector;
+    
      //Client handler callback type
     typedef std::function<void(Client)> handler_function_t;
     

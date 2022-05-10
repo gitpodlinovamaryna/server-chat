@@ -13,7 +13,7 @@ std::string getHostStr(const TcpServer::Client& client)
 }
 
 
-int startServer()
+void startServer()
 {
 
   //Creating a TcpServer object with port and lambda function arguments for client processing
@@ -23,6 +23,7 @@ int startServer()
         //Set client name
           client.setName(getHostStr(client));
         //Start receive and send message
+        std::cout<<"before message exchange"<<std::endl;
           client.messageExchange((getHostStr(client)));
       }
   );
@@ -38,10 +39,7 @@ int startServer()
   {
     //If the server is not running, displaying an error code and terminating the program
       std::cout<<"Server start error! Error code:"<< int(server.getStatus()) <<std::endl;
-      return -1;
+      
   }
-  return 0;
+  
 }
-
-
-
